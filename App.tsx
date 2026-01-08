@@ -18,7 +18,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkKey = async () => {
       try {
-        // 检查环境是否已选择 Key
         const selected = await (window as any).aistudio?.hasSelectedApiKey();
         setHasApiKey(!!selected);
       } catch {
@@ -31,7 +30,6 @@ const App: React.FC = () => {
   const handleOpenKeyDialog = async () => {
     try {
       await (window as any).aistudio?.openSelectKey();
-      // 触发后假定成功以进入应用，符合 race condition 优化策略
       setHasApiKey(true);
     } catch (e) {
       console.error("无法打开 Key 选择对话框:", e);
@@ -45,7 +43,6 @@ const App: React.FC = () => {
     setError(null);
     
     try {
-      // 每次调用前都会在服务层通过 process.env.API_KEY 实例化
       const imageUrl = await generateImage(input, mode);
       setCurrentImage(imageUrl);
       setHistory(prev => [{
@@ -56,12 +53,12 @@ const App: React.FC = () => {
         timestamp: Date.now(),
       }, ...prev].slice(0, 10));
     } catch (err: any) {
-      // 捕获特定错误并提示重新选择 Key，这是测试连接的关键反馈
       if (err.message === "KEY_RESET_REQUIRED" || err.message.includes("404")) {
         setHasApiKey(false);
         setError('API 连接失效。请重新选择一个有效的付费项目 API Key。');
       } else {
-        setError('画师暂歇：' + (err.message || '请检查 API 状态'));
+        const friendlyError = err.message || '请检查 API 状态或重试';
+        setError('创作失败：' + friendlyError);
       }
     } finally {
       setIsGenerating(false);
@@ -102,78 +99,82 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen relative pt-8 pb-24 px-4 sm:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen relative pt-8 pb-24 px-4 sm:px-8 bg-amber-50/20">
+      <div className="max-w-5xl mx-auto space-y-6">
         <header className="text-center relative">
-          <h1 className="text-5xl md:text-7xl chinese-font mb-2 tracking-tight">古韵画境</h1>
+          <h1 className="text-5xl md:text-7xl text-[#8B0000] chinese-font mb-2 tracking-tight">古韵画境</h1>
           <p className="text-xs md:text-sm text-black/40 tracking-[0.5em] font-serif uppercase">Gu Yun AI Image Engine</p>
           
-          {/* API 状态指示器 */}
-          <div className="absolute top-0 right-0 flex items-center gap-1.5 text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">
+          <div className="absolute top-0 right-0 hidden sm:flex items-center gap-1.5 text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">
             <CheckCircle2 size={12} />
             <span>引擎就绪</span>
           </div>
         </header>
 
-        <div className="w-full flex flex-col items-center gap-6">
-          {/* 输入区域 - 宽度减半且居中 */}
-          <div className="w-full max-w-xl space-y-4 animate-fade-in">
-            <div className="bg-white/95 backdrop-blur-md p-2.5 rounded-2xl shadow-xl border border-[#8B0000]/10 flex flex-col sm:flex-row items-center gap-2">
+        <div className="w-full flex flex-col items-center gap-4">
+          {/* 生成区域容器宽度保持紧凑 */}
+          <div className="w-full max-w-[300px] space-y-4 animate-fade-in">
+            <div className="bg-white/95 backdrop-blur-md p-1.5 rounded-xl shadow-xl border border-[#8B0000]/10 flex flex-col sm:flex-row items-center gap-1.5">
               <input 
                 type="text" 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={mode === Mode.CITY_MAP ? "输入你想探索的城市..." : "输入非遗技艺名称..."}
-                className="flex-1 w-full bg-amber-50/30 border-none rounded-xl px-4 py-3 outline-none text-black font-medium placeholder:text-gray-400"
+                placeholder={mode === Mode.CITY_MAP ? "输入想探索的城市..." : "输入非遗技艺名称..."}
+                className="flex-1 w-full bg-amber-50/20 border-none rounded-lg px-4 py-2 outline-none text-black font-medium text-sm placeholder:text-gray-400"
                 onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               />
               <button 
                 onClick={handleGenerate}
                 disabled={isGenerating || !input.trim()}
-                className="w-full sm:w-auto px-6 py-3 bg-[#8B0000] text-[#FFD700] rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-[#A00000] transition-all disabled:opacity-50 shadow-md active:scale-95"
+                className="w-full sm:w-auto px-4 py-2 bg-[#8B0000] text-[#FFD700] rounded-lg flex items-center justify-center gap-1.5 font-bold hover:bg-[#A00000] transition-all disabled:opacity-50 shadow-md active:scale-95 text-sm"
               >
-                {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
                 <span>{isGenerating ? "构思中" : "生成"}</span>
               </button>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 text-xs animate-fade-in">
+              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100 text-xs animate-fade-in shadow-sm">
                 <AlertCircle size={14} className="shrink-0" />
-                <p>{error}</p>
-                <button onClick={handleOpenKeyDialog} className="ml-auto underline font-bold">重设</button>
+                <p className="flex-1">{error}</p>
+                <button onClick={handleOpenKeyDialog} className="ml-auto underline font-bold hover:text-red-800">重设</button>
               </div>
             )}
+          </div>
 
-            {/* 图片展示区域 */}
-            <div className={`relative transition-all duration-700 mx-auto w-full ${mode === Mode.CITY_MAP ? 'aspect-[3/4]' : 'aspect-square shadow-2xl'}`}>
-              <Bookmark label="手绘城市地图" isActive={mode === Mode.CITY_MAP} onClick={() => setMode(Mode.CITY_MAP)} position="left" />
-              <Bookmark label="手绘特产工艺" isActive={mode === Mode.SPECIALTY_CRAFT} onClick={() => setMode(Mode.SPECIALTY_CRAFT)} position="right" />
-
-              <CloudBorder>
-                {isGenerating ? (
-                  <div className="text-center text-[#8B0000] space-y-4">
-                    <Loader2 className="w-14 h-14 animate-spin mx-auto opacity-80" />
-                    <p className="chinese-font text-2xl animate-pulse tracking-widest">挥毫落纸中...</p>
-                  </div>
-                ) : currentImage ? (
-                  <div className="relative group w-full h-full flex items-center justify-center p-2">
-                    <img src={currentImage} alt="AI Art" className="max-w-full max-h-full object-contain rounded shadow-lg transition-transform group-hover:scale-[1.01]" />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 rounded-lg">
-                      <button onClick={() => {
-                        const a = document.createElement('a'); a.href = currentImage; a.download = `guyun-${Date.now()}.png`; a.click();
-                      }} className="p-4 bg-white rounded-full text-[#8B0000] shadow-2xl hover:scale-110 transition-transform"><Download size={28} /></button>
-                      <button onClick={() => { setCurrentImage(null); setInput(''); }} className="p-4 bg-white rounded-full text-[#8B0000] shadow-2xl hover:scale-110 transition-transform"><RotateCcw size={28} /></button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center opacity-30 select-none space-y-4">
-                    <Sparkles className="w-20 h-20 mx-auto text-amber-800" />
-                    <p className="font-serif italic tracking-widest">请在上方输入词汇，点睛成画</p>
-                  </div>
-                )}
-              </CloudBorder>
+          {/* 书签切换区域 */}
+          <div className="flex justify-center -mb-2 mt-2">
+            <div className="flex shadow-md rounded-lg overflow-hidden border border-[#8B0000]/20">
+              <Bookmark label="城市地图" isActive={mode === Mode.CITY_MAP} onClick={() => setMode(Mode.CITY_MAP)} />
+              <Bookmark label="特产工艺" isActive={mode === Mode.SPECIALTY_CRAFT} onClick={() => setMode(Mode.SPECIALTY_CRAFT)} />
             </div>
+          </div>
+
+          {/* 图片展示区域：宽度不变（450px），比例固定为 3:4 */}
+          <div className="relative transition-all duration-700 mx-auto w-full max-w-[450px] aspect-[3/4]">
+            <CloudBorder>
+              {isGenerating ? (
+                <div className="text-center text-[#8B0000] space-y-4">
+                  <Loader2 className="w-14 h-14 animate-spin mx-auto opacity-80" />
+                  <p className="chinese-font text-2xl animate-pulse tracking-widest">挥毫落纸中...</p>
+                </div>
+              ) : currentImage ? (
+                <div className="relative group w-full h-full flex items-center justify-center p-2">
+                  <img src={currentImage} alt="AI Art" className="max-w-full max-h-full object-contain rounded shadow-lg transition-transform group-hover:scale-[1.005]" />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 rounded-lg">
+                    <button onClick={() => {
+                      const a = document.createElement('a'); a.href = currentImage; a.download = `guyun-${Date.now()}.png`; a.click();
+                    }} className="p-4 bg-white rounded-full text-[#8B0000] shadow-2xl hover:scale-110 transition-transform"><Download size={28} /></button>
+                    <button onClick={() => { setCurrentImage(null); setInput(''); }} className="p-4 bg-white rounded-full text-[#8B0000] shadow-2xl hover:scale-110 transition-transform"><RotateCcw size={28} /></button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center opacity-30 select-none space-y-4">
+                  <Sparkles className="w-20 h-20 mx-auto text-amber-800" />
+                  <p className="font-serif italic tracking-widest px-4">输入心仪之城，为您点睛成画</p>
+                </div>
+              )}
+            </CloudBorder>
           </div>
         </div>
 
@@ -206,7 +207,6 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* 装饰水印 */}
       <div className="fixed bottom-4 right-4 text-[8px] text-black/10 font-serif pointer-events-none uppercase tracking-tighter">
         GuYun Engine v2.5 • Powered by Gemini 3 Pro
       </div>
