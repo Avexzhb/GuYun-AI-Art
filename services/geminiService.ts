@@ -21,7 +21,7 @@ export const generateImage = async (prompt: string, mode: Mode): Promise<string>
     Rendered in traditional Chinese "Gongbi" and watercolor style. 
     The layout should show 5 key steps in an 'S' curve, each step with a small hand-drawn illustration and a short label.
     Include traditional patterns and city-specific architectural motifs in the border.
-    1:1 aspect ratio, high resolution, museum quality.`;
+    3:4 aspect ratio, high resolution, museum quality.`;
   }
 
   try {
