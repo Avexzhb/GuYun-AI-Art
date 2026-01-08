@@ -4,7 +4,7 @@ import { Mode } from "../types";
 
 export const generateImage = async (prompt: string, mode: Mode): Promise<string> => {
   // Always create a new GoogleGenAI instance right before the call to ensure up-to-date API key usage.
- const ai = new GoogleGenAI({ apiKey: process.env.API_KEY })
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   let finalPrompt = "";
   if (mode === Mode.CITY_MAP) {
