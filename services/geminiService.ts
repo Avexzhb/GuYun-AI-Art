@@ -4,9 +4,7 @@ import { Mode } from "../types";
 
 export const generateImage = async (prompt: string, mode: Mode): Promise<string> => {
   // Always create a new GoogleGenAI instance right before the call to ensure up-to-date API key usage.
-  // Vite 专用写法
-const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY;
-const genAI = new GoogleGenAI({ apiKey: apiKey || '' });
+ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY })
   
   let finalPrompt = "";
   if (mode === Mode.CITY_MAP) {
