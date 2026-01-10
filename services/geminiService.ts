@@ -3,7 +3,15 @@ import { GoogleGenAI } from "@google/genai";
 import { Mode } from "../types";
 
 export const generateImage = async (prompt: string, mode: Mode): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  //const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // 修改后
+ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY,
+  httpOptions: {
+    // 这里填入你在 Cloudflare 部署的那个 Worker 地址
+    // 注意：结尾不要加斜杠 /
+    baseUrl: "https://gemini-proxy.jazztiger12.workers.dev" 
+  }
+});
   
   let finalPrompt = "";
   if (mode === Mode.CITY_MAP) {
